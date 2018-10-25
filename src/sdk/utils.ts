@@ -154,8 +154,8 @@ export function findSdks(): Sdks {
 		return {
 			dart: config.sdkPath,
 			dartSdkIsFromFlutter: false,
-			flutter: null,
-			fuchsia: null,
+			flutter: undefined,
+			fuchsia: undefined,
 			projectType: ProjectType.Dart,
 		};
 	}
@@ -165,7 +165,7 @@ export function findSdks(): Sdks {
 	folders.forEach((folder) => fuchsiaRoot = fuchsiaRoot || findFuchsiaRoot(folder));
 	// Keep track of whether we have Fuchsia projects that are not "vanilla Flutter" because
 	// if not we will set project type to Flutter to allow daemon to run (and debugging support).
-	let hasFuchsiaProjectThatIsNotVanillaFlutter: boolean;
+	let hasFuchsiaProjectThatIsNotVanillaFlutter = false;
 	// If the folder doesn't directly contain a pubspec.yaml then we'll look at the first-level of
 	// children, as the user may have opened a folder that contains multiple projects (including a
 	// Flutter project) and we want to be sure to detect that.
@@ -243,14 +243,14 @@ export function referencesBuildRunner(folder?: string): boolean {
 	return false;
 }
 
-function extractFlutterSdkPathFromPackagesFile(file: string): string {
+function extractFlutterSdkPathFromPackagesFile(file: string): string | undefined {
 	if (!fs.existsSync(file))
-		return null;
+		return undefined;
 
 	let packagePath = new PackageMap(file).getPackagePath("flutter");
 
 	if (!packagePath)
-		return null;
+		return undefined;
 
 	// Set windows slashes to / while manipulating.
 	if (isWin) {

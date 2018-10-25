@@ -12,9 +12,27 @@ import { fsPath, isAnalyzable, ProjectType, vsCodeVersionConstraint } from "../s
 import { log, logError, logTo, logWarn } from "../src/utils/log";
 import { waitFor } from "../src/utils/promises";
 
+<<<<<<< HEAD
 export const ext = vs.extensions.getExtension(dartCodeExtensionIdentifier);
 export let extApi: InternalExtensionApi;
 export const threeMinutesInMilliseconds = 1000 * 60 * 3;
+=======
+export const ext = vs.extensions.getExtension(dartCodeExtensionIdentifier)!;
+export let extApi: {
+	analyzerCapabilities: AnalyzerCapabilities,
+	currentAnalysis: () => Promise<void>,
+	daemonCapabilities: DaemonCapabilities,
+	flutterCapabilities: FlutterCapabilities,
+	debugProvider: DebugConfigProvider,
+	nextAnalysis: () => Promise<void>,
+	initialAnalysis: Promise<void>,
+	reanalyze: () => void,
+	referenceProvider: DartReferenceProvider,
+	renameProvider: DartRenameProvider,
+	sdks: Sdks,
+	testTreeProvider: TestResultsProvider,
+};
+>>>>>>> TS strict mode fixes
 
 if (!ext) {
 	if (semver.satisfies(vs.version, vsCodeVersionConstraint)) {

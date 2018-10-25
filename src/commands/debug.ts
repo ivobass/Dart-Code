@@ -14,8 +14,8 @@ export const debugSessions: DartDebugSessionInformation[] = [];
 // export let mostRecentAttachedProbablyReusableObservatoryUri: string;
 
 export class LastDebugSession {
-	public static workspaceFolder: vs.WorkspaceFolder = null;
-	public static debugConfig: vs.DebugConfiguration = null;
+	public static workspaceFolder?: vs.WorkspaceFolder;
+	public static debugConfig?: vs.DebugConfiguration;
 }
 
 export class DebugCommands {
@@ -271,7 +271,11 @@ export class DebugCommands {
 			}
 		}));
 		context.subscriptions.push(vs.commands.registerCommand("dart.rerunLastDebugSession", () => {
-			vs.debug.startDebugging(LastDebugSession.workspaceFolder, LastDebugSession.debugConfig);
+			if (LastDebugSession.debugConfig) {
+				vs.debug.startDebugging(LastDebugSession.workspaceFolder, LastDebugSession.debugConfig);
+			} else {
+				vs.window.showErrorMessage("There is no previous debug session to run.");
+			}
 		}));
 
 		// Attach commands.

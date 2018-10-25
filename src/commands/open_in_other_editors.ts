@@ -54,6 +54,10 @@ export class OpenInOtherEditorCommands implements vs.Disposable {
 
 	private getAndroidStudioDir(folder: string): Promise<string> {
 		return new Promise((resolve, reject) => {
+			if (!this.sdks.flutter) {
+				reject("Cannot find Android Studio without a Flutter SDK");
+				return;
+			}
 			const binPath = path.join(this.sdks.flutter, flutterPath);
 			const proc = safeSpawn(folder, binPath, ["config", "--machine"]);
 			const output: string[] = [];
