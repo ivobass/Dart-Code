@@ -7,7 +7,7 @@ import { waitForResult } from "../helpers";
 
 describe("dart", () => {
 	it("created a templated project", async () => {
-		const sampleProjectFolder = fsPath(vs.workspace.workspaceFolders[0].uri);
+		const sampleProjectFolder = fsPath(vs.workspace.workspaceFolders![0].uri);
 		const expectedString = "Hello world";
 		const mainFile = path.join(sampleProjectFolder, "bin", "main.dart");
 		// Creating the sample may be a little slow, so allow up to 60 seconds for it.

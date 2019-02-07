@@ -104,7 +104,7 @@ export class DartDebugSession extends DebugSession {
 
 		process.stdout.setEncoding("utf8");
 		process.stdout.on("data", (data) => {
-			let match: RegExpExecArray;
+			let match: RegExpExecArray | undefined;
 			if (!args.noDebug && this.parseObservatoryUriFromStdOut && !this.observatory) {
 				match = ObservatoryConnection.bannerRegex.exec(data.toString());
 			}
@@ -386,7 +386,7 @@ export class DartDebugSession extends DebugSession {
 				this.log(`${request}: Closing observatory...`);
 				this.observatory.close();
 			} catch { } finally {
-				this.observatory = null;
+				this.observatory = undefined;
 			}
 		}
 
@@ -571,7 +571,7 @@ export class DartDebugSession extends DebugSession {
 				let canShowSource = fs.existsSync(sourcePath);
 
 				// Download the source if from a "dart:" uri.
-				let sourceReference: number;
+				let sourceReference: number | undefined = undefined;
 				if (uri.startsWith("dart:")) {
 					sourcePath = undefined;
 					sourceReference = thread.storeData(location.script);
@@ -582,7 +582,7 @@ export class DartDebugSession extends DebugSession {
 				const stackFrame: DebugProtocol.StackFrame = new StackFrame(
 					frameId,
 					frameName,
-					canShowSource ? new Source(shortName, sourcePath, sourceReference, null, location.script) : undefined,
+					canShowSource ? new Source(shortName, sourcePath, sourceReference, undefined, location.script) : undefined,
 					0, 0,
 				);
 				// If we wouldn't debug this source, then deemphasize in the stack.

@@ -6,11 +6,11 @@ class Config {
 	private config: WorkspaceConfiguration;
 
 	constructor() {
-		workspace.onDidChangeConfiguration((e) => this.loadConfig());
-		this.loadConfig();
+		workspace.onDidChangeConfiguration((e) => this.reloadConfig());
+		this.config = workspace.getConfiguration("dart");
 	}
 
-	private loadConfig() {
+	private reloadConfig() {
 		this.config = workspace.getConfiguration("dart");
 		setupToolEnv(this.env);
 	}
@@ -21,7 +21,7 @@ class Config {
 
 	private async setConfig<T>(key: string, value: T, target: ConfigurationTarget): Promise<void> {
 		await this.config.update(key, value, target);
-		this.loadConfig(); // TODO: Do we need this or does it get done via onDidChangeConfiguration?
+		this.reloadConfig(); // TODO: Do we need this or does it get done via onDidChangeConfiguration?
 	}
 
 	get allowAnalytics() { return this.getConfig<boolean>("allowAnalytics"); }
@@ -96,16 +96,16 @@ class ResourceConfig {
 	}
 
 	get analysisExcludedFolders() { return this.getConfig<string[]>("analysisExcludedFolders"); }
-	get debugSdkLibraries() { return this.getConfig<boolean>("debugSdkLibraries"); }
-	get debugExternalLibraries() { return this.getConfig<boolean>("debugExternalLibraries"); }
+	get debugSdkLibraries() { return !!this.getConfig<boolean>("debugSdkLibraries"); }
+	get debugExternalLibraries() { return !!this.getConfig<boolean>("debugExternalLibraries"); }
 	get doNotFormat() { return this.getConfig<string[]>("doNotFormat"); }
-	get enableCompletionCommitCharacters() { return this.getConfig<boolean>("enableCompletionCommitCharacters"); }
-	get evaluateGettersInDebugViews() { return this.getConfig<boolean>("evaluateGettersInDebugViews"); }
-	get flutterTrackWidgetCreation() { return this.getConfig<boolean>("flutterTrackWidgetCreation"); }
+	get enableCompletionCommitCharacters() { return !!this.getConfig<boolean>("enableCompletionCommitCharacters"); }
+	get evaluateGettersInDebugViews() { return !!this.getConfig<boolean>("evaluateGettersInDebugViews"); }
+	get flutterTrackWidgetCreation() { return !!this.getConfig<boolean>("flutterTrackWidgetCreation"); }
 	get flutterTrackWidgetCreationIsConfiguredExplicitly() {
 		const trackWidgetCreation = this.config.inspect("flutterTrackWidgetCreation");
 		// Return whether any of them are explicitly set, in which case we'll then read normally from the settings.
-		return trackWidgetCreation.globalValue !== undefined || trackWidgetCreation.workspaceValue !== undefined || trackWidgetCreation.workspaceFolderValue !== undefined;
+		return trackWidgetCreation && (trackWidgetCreation.globalValue !== undefined || trackWidgetCreation.workspaceValue !== undefined || trackWidgetCreation.workspaceFolderValue !== undefined);
 	}
 	get insertArgumentPlaceholders() { return this.getConfig<boolean>("insertArgumentPlaceholders"); }
 	get lineLength() { return this.getConfig<number>("lineLength"); }
@@ -114,7 +114,7 @@ class ResourceConfig {
 	get runPubGetOnPubspecChangesIsConfiguredExplicitly() {
 		const runPubGet = this.config.inspect("runPubGetOnPubspecChanges");
 		// Return whether any of them are explicitly set, in which case we'll then read normally from the settings.
-		return runPubGet.globalValue !== undefined || runPubGet.workspaceValue !== undefined || runPubGet.workspaceFolderValue !== undefined;
+		return runPubGet && (runPubGet.globalValue !== undefined || runPubGet.workspaceValue !== undefined || runPubGet.workspaceFolderValue !== undefined);
 	}
 	get flutterRunLogFile() { return createFolderForFile(resolvePaths(this.getConfig<string>("flutterRunLogFile"))); }
 	get flutterTestLogFile() { return createFolderForFile(resolvePaths(this.getConfig<string>("flutterTestLogFile"))); }
