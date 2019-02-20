@@ -214,13 +214,15 @@ beforeEach("set logger", async function () {
 	const logger = logTo(logPath);
 
 	deferUntilLast(async (testResult?: "passed" | "failed") => {
-		await logger.dispose();
-		// On CI, we delete logs for passing tests to save money on S3 :-)
-		if (process.env.CI && testResult === "passed") {
-			// try {
-			// 	fs.unlinkSync(logPath);
-			// } catch { }
-		}
+		delay(5000).then(async () => {
+			await logger.dispose();
+			// On CI, we delete logs for passing tests to save money on S3 :-)
+			if (process.env.CI && testResult === "passed") {
+				// try {
+				// 	fs.unlinkSync(logPath);
+				// } catch { }
+			}
+		});
 	});
 });
 
