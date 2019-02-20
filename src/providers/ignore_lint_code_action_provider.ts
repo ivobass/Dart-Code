@@ -11,16 +11,16 @@ export class IgnoreLintCodeActionProvider implements CodeActionProvider {
 		providedCodeActionKinds: [CodeActionKind.QuickFix],
 	};
 
-	public provideCodeActions(document: TextDocument, range: Range, context: CodeActionContext, token: CancellationToken): CodeAction[] {
+	public provideCodeActions(document: TextDocument, range: Range, context: CodeActionContext, token: CancellationToken): CodeAction[] | undefined {
 		if (!isAnalyzableAndInWorkspace(document))
-			return null;
+			return undefined;
 
 		if (!config.showIgnoreQuickFixes || !context || !context.diagnostics || !context.diagnostics.length)
-			return null;
+			return undefined;
 
 		const lintErrors = context.diagnostics.filter((d) => d instanceof DartDiagnostic && (d.type === "LINT" || d.type === "HINT"));
 		if (!lintErrors.length)
-			return null;
+			return undefined;
 
 		return lintErrors.map((diagnostic) => this.convertResult(document, diagnostic as DartDiagnostic));
 	}

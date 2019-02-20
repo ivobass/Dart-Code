@@ -567,7 +567,7 @@ function getSettingsThatRequireRestart() {
 }
 
 export async function deactivate(isRestart: boolean = false): Promise<void> {
-	setCommandVisiblity(false, null);
+	setCommandVisiblity(false);
 	vs.commands.executeCommand("setContext", FLUTTER_SUPPORTS_ATTACH, false);
 	if (!isRestart) {
 		vs.commands.executeCommand("setContext", HAS_LAST_DEBUG_CONFIG, false);
@@ -577,7 +577,7 @@ export async function deactivate(isRestart: boolean = false): Promise<void> {
 	}
 }
 
-function setCommandVisiblity(enable: boolean, projectType: util.ProjectType) {
+function setCommandVisiblity(enable: boolean, projectType?: util.ProjectType) {
 	vs.commands.executeCommand("setContext", DART_PROJECT_LOADED, enable);
 	vs.commands.executeCommand("setContext", FLUTTER_PROJECT_LOADED, enable && projectType === util.ProjectType.Flutter);
 }

@@ -17,9 +17,9 @@ export class RefactorCodeActionProvider implements CodeActionProvider {
 		providedCodeActionKinds: [CodeActionKind.Refactor],
 	};
 
-	public provideCodeActions(document: TextDocument, range: Range, context: CodeActionContext, token: CancellationToken): Thenable<CodeAction[]> {
+	public provideCodeActions(document: TextDocument, range: Range, context: CodeActionContext, token: CancellationToken): Thenable<CodeAction[]> | undefined {
 		if (!isAnalyzableAndInWorkspace(document))
-			return null;
+			return undefined;
 		return new Promise<CodeAction[]>((resolve, reject) => {
 			this.analyzer.editGetAvailableRefactorings({
 				file: fsPath(document.uri),

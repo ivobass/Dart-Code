@@ -152,7 +152,7 @@ export interface DartLaunchRequestArguments extends DebugProtocol.LaunchRequestA
 	name: string;
 	type: string;
 	request: string;
-	cwd: string;
+	cwd?: string;
 	enableAsserts: boolean;
 	dartPath: string;
 	debugSdkLibraries: boolean;
@@ -163,7 +163,7 @@ export interface DartLaunchRequestArguments extends DebugProtocol.LaunchRequestA
 	program: string;
 	args: string[];
 	vmAdditionalArgs: string[];
-	observatoryLogFile: string;
+	observatoryLogFile?: string;
 	maxLogLineLength: number;
 	pubPath: string;
 	pubSnapshotPath: string;

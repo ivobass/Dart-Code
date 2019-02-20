@@ -12,9 +12,9 @@ export class FixCodeActionProvider implements CodeActionProvider {
 		providedCodeActionKinds: [CodeActionKind.QuickFix],
 	};
 
-	public provideCodeActions(document: TextDocument, range: Range, context: CodeActionContext, token: CancellationToken): Thenable<CodeAction[]> {
+	public provideCodeActions(document: TextDocument, range: Range, context: CodeActionContext, token: CancellationToken): Thenable<CodeAction[]> | undefined {
 		if (!isAnalyzableAndInWorkspace(document))
-			return null;
+			return undefined;
 		return new Promise<CodeAction[]>((resolve, reject) => {
 			this.analyzer.editGetFixes({
 				file: fsPath(document.uri),

@@ -9,17 +9,17 @@ import { logError } from "../utils/log";
 export class DartFormattingEditProvider implements DocumentFormattingEditProvider, OnTypeFormattingEditProvider {
 	constructor(private readonly analyzer: Analyzer) { }
 
-	public provideDocumentFormattingEdits(document: TextDocument, options: FormattingOptions, token: CancellationToken): Thenable<TextEdit[]> {
+	public provideDocumentFormattingEdits(document: TextDocument, options: FormattingOptions, token: CancellationToken): Thenable<TextEdit[] | undefined> | undefined {
 		return this.doFormat(document, true);
 	}
 
-	public provideOnTypeFormattingEdits(document: TextDocument, position: Position, ch: string, options: FormattingOptions, token: CancellationToken): Thenable<TextEdit[]> {
+	public provideOnTypeFormattingEdits(document: TextDocument, position: Position, ch: string, options: FormattingOptions, token: CancellationToken): Thenable<TextEdit[] | undefined> | undefined {
 		return this.doFormat(document, false);
 	}
 
-	private doFormat(document: TextDocument, doLogError = true): Thenable<TextEdit[]> {
+	private doFormat(document: TextDocument, doLogError = true): Thenable<TextEdit[] | undefined> | undefined {
 		if (!this.shouldFormat(document))
-			return;
+			return undefined;
 		return new Promise<TextEdit[]>((resolve, reject) => {
 			this.analyzer.editFormat({
 				file: fsPath(document.uri),
@@ -28,7 +28,7 @@ export class DartFormattingEditProvider implements DocumentFormattingEditProvide
 				selectionOffset: 0,
 			}).then((resp) => {
 				if (resp.edits.length === 0)
-					resolve(null);
+					resolve(undefined);
 				else
 					resolve(resp.edits.map((e) => this.convertData(document, e)));
 			}, (e) => {

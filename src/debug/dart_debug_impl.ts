@@ -4,7 +4,7 @@ import * as path from "path";
 import { DebugSession, Event, InitializedEvent, OutputEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent } from "vscode-debugadapter";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { config } from "../config";
-import { getLogHeader, logError } from "../utils/log";
+import { getLogHeader, logError, logWarn } from "../utils/log";
 import { safeSpawn } from "../utils/processes";
 import { DebuggerResult, ObservatoryConnection, SourceReportKind, VM, VMClass, VMClassRef, VMErrorRef, VMEvent, VMFrame, VMInstance, VMInstanceRef, VMIsolate, VMIsolateRef, VMLibrary, VMMapEntry, VMObj, VMScript, VMScriptRef, VMSentinel, VMSourceLocation, VMSourceReport, VMStack, VMTypeRef } from "./dart_debug_protocol";
 import { PackageMap } from "./package_map";
@@ -571,7 +571,7 @@ export class DartDebugSession extends DebugSession {
 				let canShowSource = fs.existsSync(sourcePath);
 
 				// Download the source if from a "dart:" uri.
-				let sourceReference: number | undefined = undefined;
+				let sourceReference: number | undefined;
 				if (uri.startsWith("dart:")) {
 					sourcePath = undefined;
 					sourceReference = thread.storeData(location.script);
@@ -805,7 +805,7 @@ export class DartDebugSession extends DebugSession {
 		}
 	}
 
-	private async getGetterNamesForHierarchy(thread: VMIsolateRef, classRef: VMClassRef): Promise<string[]> {
+	private async getGetterNamesForHierarchy(thread: VMIsolateRef, classRef: VMClassRef | undefined): Promise<string[]> {
 		let getterNames: string[] = [];
 		while (classRef) {
 			const classResponse = await this.observatory.getObject(thread.id, classRef.id);
@@ -832,11 +832,11 @@ export class DartDebugSession extends DebugSession {
 		return kind === "String" || kind === "Bool" || kind === "Int" || kind === "Num" || kind === "Double" || kind === "Null";
 	}
 
-	private async callToString(isolate: VMIsolateRef, instanceRef: VMInstanceRef, getFullString: boolean = false): Promise<string> {
+	private async callToString(isolate: VMIsolateRef, instanceRef: VMInstanceRef, getFullString: boolean = false): Promise<string | undefined> {
 		try {
 			const result = await this.observatory.evaluate(isolate.id, instanceRef.id, "toString()");
 			if (result.result.type === "@Error") {
-				return null;
+				return undefined;
 			} else {
 				let evalResult: VMInstanceRef = result.result as VMInstanceRef;
 
@@ -849,7 +849,7 @@ export class DartDebugSession extends DebugSession {
 			}
 		} catch (e) {
 			logError(e, LogCategory.Observatory);
-			return null;
+			return undefined;
 		}
 	}
 
@@ -1037,6 +1037,16 @@ export class DartDebugSession extends DebugSession {
 		const kind = event.kind;
 		const thread = event.isolate ? this.threadManager.getThreadInfoFromRef(event.isolate) : undefined;
 
+		if (!event.isolate || !thread) {
+			logWarn("No thread for pause event");
+			return;
+		}
+
+		if (!this.observatory) {
+			logWarn("No observatory connection");
+			return;
+		}
+
 		// For PausePostRequest we need to re-send all breakpoints; this happens after a flutter restart
 		if (kind === "PausePostRequest") {
 			try {
@@ -1064,7 +1074,7 @@ export class DartDebugSession extends DebugSession {
 		} else {
 			// PauseStart, PauseExit, PauseBreakpoint, PauseInterrupted, PauseException
 			let reason = "pause";
-			let exceptionText = null;
+			let exceptionText;
 			let shouldRemainedStoppedOnBreakpoint = true;
 
 			if (kind === "PauseBreakpoint" && event.pauseBreakpoints && event.pauseBreakpoints.length) {
@@ -1119,8 +1129,8 @@ export class DartDebugSession extends DebugSession {
 	}
 
 	// Like valueAsString, but will call toString() if the thing is truncated.
-	private async fullValueAsString(isolate: VMIsolateRef, instanceRef: VMInstanceRef): Promise<string> {
-		let text: string;
+	private async fullValueAsString(isolate: VMIsolateRef, instanceRef: VMInstanceRef): Promise<string | undefined> {
+		let text: string | undefined;
 		if (!instanceRef.valueAsStringIsTruncated)
 			text = this.valueAsString(instanceRef, false);
 		if (!text)
@@ -1288,14 +1298,14 @@ export class DartDebugSession extends DebugSession {
 		return uri;
 	}
 
-	private valueAsString(ref: VMInstanceRef | VMSentinel, useClassNameAsFallback = true, suppressQuotesAroundStrings: boolean = false): string {
+	private valueAsString(ref: VMInstanceRef | VMSentinel, useClassNameAsFallback = true, suppressQuotesAroundStrings: boolean = false): string | undefined {
 		if (ref.type === "Sentinel")
 			return ref.valueAsString;
 
 		const instanceRef = ref as VMInstanceRef;
 
 		if (ref.kind === "String" || ref.valueAsString) {
-			let str: string = instanceRef.valueAsString;
+			let str: string | undefined = instanceRef.valueAsString;
 			if (instanceRef.valueAsStringIsTruncated)
 				str += "…";
 			if (instanceRef.kind === "String" && !suppressQuotesAroundStrings)
@@ -1311,7 +1321,7 @@ export class DartDebugSession extends DebugSession {
 		} else if (useClassNameAsFallback) {
 			return this.getFriendlyTypeName(instanceRef);
 		} else {
-			return null;
+			return undefined;
 		}
 	}
 
@@ -1335,18 +1345,16 @@ export class DartDebugSession extends DebugSession {
 			// (or a string expression) in the response.
 			val.evaluateName = canEvaluate ? evaluateName : undefined;
 
-			let str = config.previewToStringInDebugViews && allowFetchFullString && !val.valueAsString
+			const str = config.previewToStringInDebugViews && allowFetchFullString && !val.valueAsString
 				? await this.fullValueAsString(thread.ref, val)
 				: this.valueAsString(val);
-			if (!val.valueAsString && !str)
-				str = "";
 
 			return {
-				evaluateName: canEvaluate ? evaluateName : null,
-				indexedVariables: (val && val.kind && val.kind.endsWith("List") ? val.length : null),
+				evaluateName: canEvaluate ? evaluateName : undefined,
+				indexedVariables: (val && val.kind && val.kind.endsWith("List") ? val.length : undefined),
 				name,
 				type: `${val.kind} (${val.class.name})`,
-				value: str,
+				value: str || "",
 				variablesReference: val.valueAsString ? 0 : thread.storeData(val),
 			};
 		}
@@ -1366,7 +1374,7 @@ export class DartDebugSession extends DebugSession {
 		return uri.startsWith("package:") && this.packageMap && this.packageMap.localPackageName && !uri.startsWith(`package:${this.packageMap.localPackageName}/`);
 	}
 
-	private resolveFileLocation(script: VMScript, tokenPos: number): FileLocation {
+	private resolveFileLocation(script: VMScript, tokenPos: number): FileLocation | undefined {
 		const table: number[][] = script.tokenPosTable;
 		for (const entry of table) {
 			// [lineNumber, (tokenPos, columnNumber)*]
@@ -1378,7 +1386,7 @@ export class DartDebugSession extends DebugSession {
 			}
 		}
 
-		return null;
+		return undefined;
 	}
 
 	private async pollForMemoryUsage(): Promise<void> {
@@ -1431,7 +1439,7 @@ export class DartDebugSession extends DebugSession {
 			const sourcePath: string | undefined = this.convertVMUriToSourcePath(sourceUri);
 			const canShowSource = sourcePath && sourcePath !== sourceUri && fs.existsSync(sourcePath);
 			const shortName = this.formatUriForShortDisplay(sourceUri);
-			const source = canShowSource ? new Source(shortName, sourcePath, null, null, null) : undefined;
+			const source = canShowSource ? new Source(shortName, sourcePath, undefined, undefined, undefined) : undefined;
 
 			if (source) {
 				output.body.source = source;

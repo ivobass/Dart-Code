@@ -22,21 +22,21 @@ let portToBind = 0;
 
 export class DevTools implements vs.Disposable {
 	private devToolsStatusBarItem = vs.window.createStatusBarItem(vs.StatusBarAlignment.Right, 100);
-	private proc: child_process.ChildProcess;
+	private proc: child_process.ChildProcess | undefined;
 	/// Resolves to the DevTools URL. This is created immediately when a new process is being spawned so that
 	/// concurrent launches can wait on the same promise.
-	private devtoolsUrl: Thenable<string>;
+	private devtoolsUrl: Thenable<string> | undefined;
 
 	constructor(private sdks: Sdks, private analytics: Analytics, private pubGlobal: PubGlobal) { }
 
 	/// Spawns DevTools and returns the full URL to open for that session
 	///   eg. http://localhost:8123/?port=8543
-	public async spawnForSession(session: DartDebugSessionInformation): Promise<{ url: string, dispose: () => void }> {
+	public async spawnForSession(session: DartDebugSessionInformation): Promise<{ url: string, dispose: () => void } | undefined> {
 		this.analytics.logDebuggerOpenDevTools();
 
 		const isAvailable = await this.pubGlobal.promptToInstallIfRequired(devtoolsPackageName, devtools, undefined, "0.0.6");
 		if (!isAvailable) {
-			return;
+			return undefined;
 		}
 
 		const observatoryPort = extractObservatoryPort(session.observatoryUri);
@@ -92,8 +92,8 @@ export class DevTools implements vs.Disposable {
 			});
 			this.proc.stderr.on("data", (data) => stderr.push(data.toString()));
 			this.proc.on("close", (code) => {
-				this.proc = null;
-				this.devtoolsUrl = null;
+				this.proc = undefined;
+				this.devtoolsUrl = undefined;
 				this.devToolsStatusBarItem.hide();
 				if (code && code !== 0) {
 					// Reset the port to 0 on error in case it was from us trying to reuse the previous port.
@@ -112,7 +112,7 @@ export class DevTools implements vs.Disposable {
 
 	public dispose(): void {
 		this.devToolsStatusBarItem.dispose();
-		this.devtoolsUrl = null;
+		this.devtoolsUrl = undefined;
 		if (this.proc && !this.proc.killed) {
 			this.proc.kill();
 		}

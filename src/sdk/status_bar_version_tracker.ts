@@ -8,8 +8,8 @@ export class StatusBarVersionTracker implements vs.Disposable {
 	constructor(projectType: ProjectType, dartSdkVersion: string, flutterSdkVersion: string, isDartSdkFromFlutter: boolean) {
 		// Which switcher we show is based on whether we're in a Flutter project or not.
 		const switchSdkCommand = projectType === ProjectType.Flutter
-			? (config.flutterSdkPaths && config.flutterSdkPaths.length > 0 ? "dart.changeFlutterSdk" : null)
-			: (config.sdkPaths && config.sdkPaths.length > 0 ? "dart.changeSdk" : null);
+			? (config.flutterSdkPaths && config.flutterSdkPaths.length > 0 ? "dart.changeFlutterSdk" : undefined)
+			: (config.sdkPaths && config.sdkPaths.length > 0 ? "dart.changeSdk" : undefined);
 
 		// Render an approprite label for what we're calling this SDK.
 		const label = projectType === ProjectType.Flutter

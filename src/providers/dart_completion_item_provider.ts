@@ -79,7 +79,7 @@ export class DartCompletionItemProvider implements CompletionItemProvider {
 		document: TextDocument, nextCharacter: string, enableCommitCharacters: boolean, insertArgumentPlaceholders: boolean, notification: as.CompletionResultsNotification, suggestion: as.CompletionSuggestion,
 	): CompletionItem {
 		const element = suggestion.element;
-		const elementKind = element ? this.getElementKind(element.kind) : null;
+		const elementKind = element ? this.getElementKind(element.kind) : undefined;
 
 		let label = suggestion.displayText || suggestion.completion;
 		let detail = "";
