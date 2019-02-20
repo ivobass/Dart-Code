@@ -2,7 +2,7 @@ import * as assert from "assert";
 import { toolEnv } from "../../../src/utils/processes";
 import { setConfigForTest } from "../../helpers";
 
-describe("process utils", () => {
+describe.only("process utils", () => {
 	it("toolEnv includes PUB_ENVIRONMENT", () => {
 		assert.ok(toolEnv.PUB_ENVIRONMENT);
 	});
