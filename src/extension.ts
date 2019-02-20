@@ -24,6 +24,7 @@ import { TypeHierarchyCommand } from "./commands/type_hierarchy";
 import { config } from "./config";
 import { flutterExtensionIdentifier, forceWindowsDriveLetterToUppercase, isWin, isWithinPath, LogCategory, platformName } from "./debug/utils";
 import { ClosingLabelsDecorations } from "./decorations/closing_labels_decorations";
+import { FlutterSnippetDecorations } from "./decorations/flutter_snippet_decorations";
 import { HotReloadCoverageDecorations } from "./decorations/hot_reload_coverage_decorations";
 import { FlutterCapabilities } from "./flutter/capabilities";
 import { setUpDaemonMessageHandler } from "./flutter/daemon_message_handler";
@@ -361,6 +362,12 @@ export function activate(context: vs.ExtensionContext, isRestart: boolean = fals
 			testTreeProvider.setSelectedNodes(e.selection && e.selection.length === 1 ? e.selection[0] : undefined);
 		}),
 	);
+
+	if (sdks.projectType === util.ProjectType.Flutter) { // TODO: Config?
+		const snippetDecorator = new FlutterSnippetDecorations();
+		context.subscriptions.push(snippetDecorator);
+		context.subscriptions.push(vs.languages.registerCodeLensProvider(DART_MODE, snippetDecorator));
+	}
 
 	if (sdks.projectType !== util.ProjectType.Dart && config.previewHotReloadCoverageMarkers) {
 		context.subscriptions.push(new HotReloadCoverageDecorations(debug));
