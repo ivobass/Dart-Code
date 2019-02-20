@@ -217,9 +217,9 @@ beforeEach("set logger", async function () {
 		await logger.dispose();
 		// On CI, we delete logs for passing tests to save money on S3 :-)
 		if (process.env.CI && testResult === "passed") {
-			try {
-				fs.unlinkSync(logPath);
-			} catch { }
+			// try {
+			// 	fs.unlinkSync(logPath);
+			// } catch { }
 		}
 	});
 });
