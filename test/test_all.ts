@@ -2,6 +2,7 @@ import * as childProcess from "child_process";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import { delay } from "./helpers";
 
 const args = ["node_modules/vscode/bin/test"];
 let exitCode = 0;
@@ -152,21 +153,32 @@ async function runAllTests(): Promise<void> {
 	const totalRuns = 9;
 	let runNumber = 1;
 	try {
-		await Promise.all([
-			runTests("dart_only", "hello_world", dartSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`),
-			runTests("multi_root", "projects.code-workspace", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`),
-			runTests("multi_project_folder", "", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`),
-			runTests("not_activated/dart_create", "empty", dartSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`),
-			runTests("not_activated/flutter_create", "empty", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`),
-			runTests("dart_create_tests", "dart_create_tests.code-workspace", dartSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`),
-			runTests("flutter_create_tests", "flutter_create_tests.code-workspace", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`),
-		]);
+		const allTestRuns: Array<Promise<any>> = [];
+		allTestRuns.push(runTests("dart_only", "hello_world", dartSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`));
+		await delay(1000);
+		allTestRuns.push(runTests("multi_root", "projects.code-workspace", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`));
+		await delay(1000);
+		allTestRuns.push(runTests("multi_project_folder", "", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`));
+		await delay(1000);
+		allTestRuns.push(runTests("not_activated/dart_create", "empty", dartSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`));
+		await delay(1000);
+		allTestRuns.push(runTests("not_activated/flutter_create", "empty", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`));
+		await delay(1000);
+		allTestRuns.push(runTests("dart_create_tests", "dart_create_tests.code-workspace", dartSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`));
+		await delay(1000);
+		allTestRuns.push(runTests("flutter_create_tests", "flutter_create_tests.code-workspace", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`));
+		await delay(1000);
+
 		if (flutterRoot) {
-			await runTests("flutter_repository", flutterRoot, flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`);
+			allTestRuns.push(runTests("flutter_repository", flutterRoot, flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`));
 		} else {
 			console.error("FLUTTER_ROOT/FLUTTER_PATH NOT SET, SKIPPING FLUTTER REPO TESTS");
 			exitCode = 1;
 		}
+
+		// Wait for the runs to complete.
+		await Promise.all(allTestRuns);
+
 		// This one is run last because it's the most fragile, and can bring down the following tests if it hangs in a
 		// way that doesn't get caught by the test timeout properly.
 		await runTests("flutter_only", "flutter_hello_world", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`);
