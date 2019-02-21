@@ -1,5 +1,6 @@
 import * as childProcess from "child_process";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 
 const args = ["node_modules/vscode/bin/test"];
@@ -57,6 +58,7 @@ function runNode(cwd: string, args: string[], env: any, printTimes = false): Pro
 	});
 }
 
+let tempFolderIndex = 1;
 async function runTests(testFolder: string, workspaceFolder: string, sdkPaths: string, codeVersion: string, runInfo: string): Promise<void> {
 	console.log("\n\n");
 	console.log(yellow("############################################################"));
@@ -85,6 +87,7 @@ async function runTests(testFolder: string, workspaceFolder: string, sdkPaths: s
 		env.CODE_TESTS_WORKSPACE = path.join(cwd, "test", "test_projects", workspaceFolder);
 	}
 	env.CODE_TESTS_PATH = path.join(cwd, "out", "test", testFolder);
+	env.CODE_TESTS_DATA_DIR = path.join(os.tmpdir(), "dart-code-tests", "vscode-data" + (tempFolderIndex++).toString());
 
 	// Figure out a filename for results...
 	const dartFriendlyName = (process.env.ONLY_RUN_DART_VERSION || "local").toLowerCase();
@@ -149,13 +152,15 @@ async function runAllTests(): Promise<void> {
 	const totalRuns = 9;
 	let runNumber = 1;
 	try {
-		await runTests("dart_only", "hello_world", dartSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`);
-		await runTests("multi_root", "projects.code-workspace", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`);
-		await runTests("multi_project_folder", "", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`);
-		await runTests("not_activated/dart_create", "empty", dartSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`);
-		await runTests("not_activated/flutter_create", "empty", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`);
-		await runTests("dart_create_tests", "dart_create_tests.code-workspace", dartSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`);
-		await runTests("flutter_create_tests", "flutter_create_tests.code-workspace", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`);
+		await Promise.all([
+			runTests("dart_only", "hello_world", dartSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`),
+			runTests("multi_root", "projects.code-workspace", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`),
+			runTests("multi_project_folder", "", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`),
+			runTests("not_activated/dart_create", "empty", dartSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`),
+			runTests("not_activated/flutter_create", "empty", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`),
+			runTests("dart_create_tests", "dart_create_tests.code-workspace", dartSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`),
+			runTests("flutter_create_tests", "flutter_create_tests.code-workspace", flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`),
+		]);
 		if (flutterRoot) {
 			await runTests("flutter_repository", flutterRoot, flutterSdkPath, codeVersion, `${runNumber++} of ${totalRuns}`);
 		} else {
